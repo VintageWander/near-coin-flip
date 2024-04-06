@@ -1,4 +1,4 @@
-use near_workspaces::{Account, Contract, types::NearToken};
+use near_workspaces::{types::NearToken, Account, Contract};
 use serde_json::json;
 
 #[tokio::test]
@@ -6,7 +6,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 	let worker = near_workspaces::sandbox().await?;
 	let contract_wasm = near_workspaces::compile_project("./").await?;
 	let contract = worker.dev_deploy(&contract_wasm).await?;
-	
+
 	// create accounts
 	let account = worker.dev_create_account().await?;
 	let alice = account
@@ -15,7 +15,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 		.transact()
 		.await?
 		.into_result()?;
-	
+
 	// begin tests
 	test_user_has_no_points(&alice, &contract).await?;
 	test_points_are_correctly_computed(&alice, &contract).await?;
@@ -32,7 +32,7 @@ async fn test_user_has_no_points(
 		.transact()
 		.await?
 		.json()?;
-	
+
 	assert_eq!(points, 0);
 	println!("Passed ✅ test_user_has_no_points");
 	Ok(())
@@ -45,7 +45,7 @@ async fn test_points_are_correctly_computed(
 	let mut tails_counter = 0;
 	let mut heads_counter = 0;
 	let mut expected_points: u8 = 0;
-	
+
 	let mut i = 0;
 	while i < 10 {
 		let outcome: String = user
@@ -54,7 +54,7 @@ async fn test_points_are_correctly_computed(
 			.transact()
 			.await?
 			.json()?;
-		
+
 		if outcome.eq("tails") {
 			tails_counter += 1;
 			expected_points += 1;
@@ -64,17 +64,17 @@ async fn test_points_are_correctly_computed(
 		}
 		i += 1;
 	}
-	
+
 	assert!(heads_counter >= 2);
 	assert!(tails_counter >= 2);
-	
+
 	let points: u8 = user
 		.call(contract.id(), "points_of")
 		.args_json(json!({ "player": user.id()}))
 		.transact()
 		.await?
 		.json()?;
-	
+
 	assert_eq!(points, expected_points);
 	println!("Passed ✅ test_points_are_correctly_computed");
 	Ok(())
